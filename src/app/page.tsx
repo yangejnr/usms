@@ -50,6 +50,24 @@ export default function Home() {
       }
       setAuthSuccess("Signed in successfully.");
       setSignInOpen(false);
+      if (data?.user?.user_role === "teacher") {
+        if (data?.user?.id) {
+          try {
+            const profileResponse = await fetch(
+              `/api/teacher/profile?user_id=${data.user.id}`
+            );
+            const profileData = await profileResponse.json();
+            if (profileResponse.ok && profileData?.profile) {
+              router.push("/teacher");
+              return;
+            }
+          } catch (error) {
+            // Fall through to profile page if check fails.
+          }
+        }
+        router.push("/teacher/profile");
+        return;
+      }
       router.push("/super-admin");
     } catch (error) {
       setAuthError("Unable to reach the server.");
@@ -421,7 +439,6 @@ export default function Home() {
             mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
           aria-hidden={!mobileOpen}
-          onClick={() => setMobileOpen(false)}
         />
       <aside
         className={`fixed right-0 top-0 z-50 h-full w-full max-w-xs transform bg-[#f7f2e8] shadow-2xl transition-transform ${
@@ -486,7 +503,6 @@ export default function Home() {
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={() => setSignInOpen(false)}
         />
         <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-2xl">
           <div className="flex items-start justify-between border-b border-[#0f4c3a]/10 px-6 py-5">
@@ -587,7 +603,6 @@ export default function Home() {
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={() => setShowForgot(false)}
         />
         <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-2xl">
           <div className="flex items-start justify-between border-b border-[#0f4c3a]/10 px-6 py-5">

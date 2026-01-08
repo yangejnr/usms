@@ -310,7 +310,6 @@ export default function SubjectsPage() {
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={() => setShowModal(false)}
         />
         <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl">
           <div className="flex items-start justify-between border-b border-[#0f4c3a]/10 px-6 py-5">
@@ -421,7 +420,6 @@ export default function SubjectsPage() {
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={() => setViewSubject(null)}
         />
         {viewSubject ? (
           <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl">
@@ -479,7 +477,6 @@ export default function SubjectsPage() {
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={() => setEditSubject(null)}
         />
         {editSubject ? (
           <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl">
@@ -610,7 +607,6 @@ export default function SubjectsPage() {
       >
         <div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={() => setConfirmSubject(null)}
         />
         <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl">
           <div className="border-b border-[#0f4c3a]/10 px-6 py-5">
