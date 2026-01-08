@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { generateAccountId } from "@/lib/id";
 import { sendAccountEmail } from "@/lib/email";
+import { validatePasswordPolicy } from "@/lib/password";
 
 const TEMP_PASSWORD_LENGTH = 10;
 
@@ -44,12 +45,15 @@ export async function POST(request: Request) {
     }
 
     const accountId = await generateAccountId(role);
-    const tempPassword = generateTempPassword();
+    let tempPassword = generateTempPassword();
+    while (!validatePasswordPolicy(tempPassword).valid) {
+      tempPassword = generateTempPassword();
+    }
     const passwordHash = await bcrypt.hash(tempPassword, 10);
 
     const { rows } = await pool.query<{ id: string }>(
-      `INSERT INTO users (email, password, status, user_role, full_name, account_id, category, school)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO users (email, password, status, user_role, full_name, account_id, category, school, must_change_password)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id`,
       [
         email,
@@ -60,6 +64,7 @@ export async function POST(request: Request) {
         accountId,
         category,
         category === "diocese" ? null : school || null,
+        true,
       ]
     );
 
