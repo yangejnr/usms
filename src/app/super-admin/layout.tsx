@@ -7,7 +7,7 @@ const navItems = [
   { label: "Dashboard", href: "/super-admin" },
   { label: "Users", href: "/super-admin/users" },
   { label: "Schools", href: "/super-admin/schools" },
-  { label: "Approvals", href: "/super-admin/approvals" },
+  { label: "Classes", href: "/super-admin/classes" },
   { label: "Reports", href: "/super-admin/reports" },
 ];
 
@@ -17,6 +17,7 @@ export default function SuperAdminLayout({
   children: React.ReactNode;
 }>) {
   const [displayName, setDisplayName] = useState("Super Admin");
+  const [accountOpen, setAccountOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -53,12 +54,38 @@ export default function SuperAdminLayout({
           </p>
           <p className="font-display text-lg">{displayName}</p>
         </div>
-        <button
-          className="rounded-full border border-[#1b1b18]/20 bg-white px-4 py-2 text-sm font-semibold text-[#1b1b18] transition hover:border-[#0f4c3a]/50 hover:text-[#0f4c3a]"
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
+        <div className="relative">
+          <button
+            className="flex items-center gap-2 rounded-full border border-[#1b1b18]/20 bg-white px-4 py-2 text-sm font-semibold text-[#1b1b18] transition hover:border-[#0f4c3a]/50 hover:text-[#0f4c3a]"
+            onClick={() => setAccountOpen((prev) => !prev)}
+          >
+            <span className="text-base">⚙</span>
+            <span>Account ▾</span>
+          </button>
+          <div
+            className={`absolute right-0 mt-2 w-48 rounded-2xl border border-[#0f4c3a]/10 bg-white/95 p-2 shadow-xl transition ${
+              accountOpen ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
+          >
+            <button
+              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm text-[#1b1b18] transition hover:bg-[#f1eadc]"
+              onClick={() => {
+                setAccountOpen(false);
+                router.push("/change-password");
+              }}
+            >
+              Change password
+              <span className="text-[#0f4c3a]/60">›</span>
+            </button>
+            <button
+              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm text-[#1b1b18] transition hover:bg-[#f1eadc]"
+              onClick={handleLogout}
+            >
+              Logout
+              <span className="text-[#0f4c3a]/60">›</span>
+            </button>
+          </div>
+        </div>
       </div>
       <div className="mx-auto grid w-full max-w-7xl gap-6 px-6 pb-8 lg:grid-cols-[260px_1fr]">
         <aside className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-2xl shadow-[#0f4c3a]/10">
