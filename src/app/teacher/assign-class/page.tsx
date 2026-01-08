@@ -26,43 +26,29 @@ export default function AssignClassPage() {
   } | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user?.id) {
-        return;
-      }
-      const fetchTeachers = async () => {
-        setListState({ loading: true, error: null });
-        try {
-          const response = await fetch(
-            `/api/school-admin/teachers?user_id=${user.id}`
-          );
-          const data = await response.json();
-          if (!response.ok) {
-            setListState({
-              loading: false,
-              error: data?.message ?? "Unable to fetch teachers.",
-            });
-            return;
-          }
-          setTeachers(data?.teachers ?? []);
-          setSchoolName(data?.school ?? null);
-          setListState({ loading: false, error: null });
-        } catch (error) {
+    const fetchTeachers = async () => {
+      setListState({ loading: true, error: null });
+      try {
+        const response = await fetch(`/api/school-admin/teachers`);
+        const data = await response.json();
+        if (!response.ok) {
           setListState({
             loading: false,
-            error: "Unable to reach the server.",
+            error: data?.message ?? "Unable to fetch teachers.",
           });
+          return;
         }
-      };
-      fetchTeachers();
-    } catch (error) {
-      return;
-    }
+        setTeachers(data?.teachers ?? []);
+        setSchoolName(data?.school ?? null);
+        setListState({ loading: false, error: null });
+      } catch (error) {
+        setListState({
+          loading: false,
+          error: "Unable to reach the server.",
+        });
+      }
+    };
+    fetchTeachers();
   }, []);
 
   const handleDeactivate = async (teacherId: string) => {

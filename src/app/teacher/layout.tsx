@@ -20,44 +20,47 @@ export default function TeacherLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as {
-        full_name?: string | null;
-        email?: string | null;
-        account_id?: string | null;
-        id?: string | null;
-      };
-      setDisplayName(
-        user.full_name || user.account_id || user.email || "Teacher"
-      );
-      if (user.id) {
-        const checkSchoolAdmin = async () => {
-          try {
-            const response = await fetch(
-              `/api/admin/school-admins/${user.id}`
-            );
-            const data = await response.json();
-            if (response.ok && data?.assigned) {
-              setShowAssign(true);
-            }
-          } catch (error) {
-            setShowAssign(false);
-          }
+    const loadUser = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        const data = await response.json();
+        if (!response.ok || !data?.user) {
+          return;
+        }
+        const user = data.user as {
+          full_name?: string | null;
+          email?: string | null;
+          account_id?: string | null;
+          id?: string | null;
         };
-        checkSchoolAdmin();
+        setDisplayName(
+          user.full_name || user.account_id || user.email || "Teacher"
+        );
+        if (user.id) {
+          const adminResponse = await fetch(
+            `/api/admin/school-admins/${user.id}`
+          );
+          const adminData = await adminResponse.json();
+          if (adminResponse.ok && adminData?.assigned) {
+            setShowAssign(true);
+          }
+        }
+      } catch (error) {
+        setDisplayName("Teacher");
       }
-    } catch (error) {
-      setDisplayName("Teacher");
-    }
+    };
+    loadUser();
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("ajs_user");
-    router.push("/");
+    const doLogout = async () => {
+      try {
+        await fetch("/api/auth/logout", { method: "POST" });
+      } finally {
+        router.push("/");
+      }
+    };
+    doLogout();
   };
 
   return (

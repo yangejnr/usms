@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
 export async function GET(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["teacher"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("user_id");
     const subjectId = searchParams.get("subject_id");
 
-    if (!userId || !subjectId) {
+    if (!subjectId) {
       return NextResponse.json(
-        { ok: false, message: "User id and subject id are required." },
+        { ok: false, message: "Subject id is required." },
         { status: 400 }
       );
     }
@@ -20,7 +29,7 @@ export async function GET(request: Request) {
        JOIN classes c ON c.id = tcs.class_id
        WHERE tcs.user_id = $1 AND tcs.subject_id = $2 AND tcs.status = 'active'
        ORDER BY c.name ASC`,
-      [userId, subjectId]
+      [user.id, subjectId]
     );
 
     return NextResponse.json({ ok: true, classes: rows });

@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -68,10 +78,19 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const { id } = await params;
     if (!id) {
       return NextResponse.json(

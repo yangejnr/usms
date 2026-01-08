@@ -40,9 +40,6 @@ export default function Home() {
         return;
       }
 
-      if (data?.user) {
-        localStorage.setItem("ajs_user", JSON.stringify(data.user));
-      }
       if (data?.user?.must_change_password === false) {
         setSignInOpen(false);
         router.push("/change-password");
@@ -53,9 +50,7 @@ export default function Home() {
       if (data?.user?.user_role === "teacher") {
         if (data?.user?.id) {
           try {
-            const profileResponse = await fetch(
-              `/api/teacher/profile?user_id=${data.user.id}`
-            );
+            const profileResponse = await fetch(`/api/teacher/profile`);
             const profileData = await profileResponse.json();
             if (profileResponse.ok && profileData?.profile) {
               router.push("/teacher");

@@ -22,28 +22,42 @@ export default function SuperAdminLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as {
-        full_name?: string | null;
-        email?: string | null;
-        username?: string | null;
-        account_id?: string | null;
-      };
-      setDisplayName(
-        user.full_name || user.account_id || user.email || user.username || "Super Admin"
-      );
-    } catch (error) {
-      setDisplayName("Super Admin");
-    }
+    const loadUser = async () => {
+      try {
+        const response = await fetch("/api/auth/me");
+        const data = await response.json();
+        if (!response.ok || !data?.user) {
+          return;
+        }
+        const user = data.user as {
+          full_name?: string | null;
+          email?: string | null;
+          username?: string | null;
+          account_id?: string | null;
+        };
+        setDisplayName(
+          user.full_name ||
+            user.account_id ||
+            user.email ||
+            user.username ||
+            "Super Admin"
+        );
+      } catch (error) {
+        setDisplayName("Super Admin");
+      }
+    };
+    loadUser();
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("ajs_user");
-    router.push("/");
+    const doLogout = async () => {
+      try {
+        await fetch("/api/auth/logout", { method: "POST" });
+      } finally {
+        router.push("/");
+      }
+    };
+    doLogout();
   };
 
   return (

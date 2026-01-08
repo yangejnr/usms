@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { generateAccountId } from "@/lib/id";
 import { sendAccountEmail } from "@/lib/email";
 import { validatePasswordPolicy } from "@/lib/password";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
 const TEMP_PASSWORD_LENGTH = 10;
 
@@ -19,6 +20,15 @@ function generateTempPassword() {
 
 export async function POST(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const body = await request.json();
     const fullName = String(body?.full_name ?? "").trim();
     const email = String(body?.email ?? "").trim().toLowerCase();
@@ -96,8 +106,17 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const { rows } = await pool.query(
       `SELECT id, account_id, full_name, email, user_role, status, category, school
        FROM users

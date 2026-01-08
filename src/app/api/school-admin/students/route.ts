@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireSchoolAdmin } from "@/lib/authorization";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("user_id");
-
-    if (!userId) {
-      return NextResponse.json(
-        { ok: false, message: "User id is required." },
-        { status: 400 }
-      );
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const adminCheck = await requireSchoolAdmin(user.id);
+    if (adminCheck) {
+      return adminCheck;
     }
 
     const adminResult = await pool.query<{ school: string | null }>(
       "SELECT school FROM users WHERE id = $1 LIMIT 1",
-      [userId]
+      [user.id]
     );
     const school = adminResult.rows[0]?.school;
 
@@ -46,8 +46,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const adminCheck = await requireSchoolAdmin(user.id);
+    if (adminCheck) {
+      return adminCheck;
+    }
+
     const body = await request.json();
-    const userId = String(body?.user_id ?? "").trim();
     const studentNo = String(body?.student_no ?? "").trim();
     const surname = String(body?.surname ?? "").trim();
     const firstname = String(body?.firstname ?? "").trim();
@@ -65,7 +73,6 @@ export async function POST(request: Request) {
     const parentAddress = String(body?.parent_address ?? "").trim();
 
     if (
-      !userId ||
       !studentNo ||
       !surname ||
       !firstname ||
@@ -81,7 +88,7 @@ export async function POST(request: Request) {
 
     const adminResult = await pool.query<{ school: string | null }>(
       "SELECT school FROM users WHERE id = $1 LIMIT 1",
-      [userId]
+      [user.id]
     );
     const school = adminResult.rows[0]?.school;
 

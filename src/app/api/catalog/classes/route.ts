@@ -8,24 +8,21 @@ export async function GET(request: Request) {
     if (!user) {
       return response;
     }
-    const roleCheck = requireRole(user, ["teacher"]);
+    const roleCheck = requireRole(user, ["admin", "teacher"]);
     if (roleCheck) {
       return roleCheck;
     }
 
     const { rows } = await pool.query(
-      `SELECT DISTINCT s.id, s.name, s.code, s.category
-       FROM teacher_class_subjects tcs
-       JOIN subjects s ON s.id = tcs.subject_id
-       WHERE tcs.user_id = $1 AND tcs.status = 'active'
-       ORDER BY s.name ASC`,
-      [user.id]
+      `SELECT id, name, code, category, status
+       FROM classes
+       WHERE status = 'active'
+       ORDER BY name ASC`
     );
-
-    return NextResponse.json({ ok: true, subjects: rows });
+    return NextResponse.json({ ok: true, classes: rows });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, message: "Unable to fetch subjects." },
+      { ok: false, message: "Unable to fetch classes." },
       { status: 500 }
     );
   }

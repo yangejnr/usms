@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("user_id");
-
-    if (!userId) {
-      return NextResponse.json(
-        { ok: false, message: "User id is required." },
-        { status: 400 }
-      );
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["teacher"]);
+    if (roleCheck) {
+      return roleCheck;
     }
 
     const { rows } = await pool.query(
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
        JOIN classes c ON c.id = tc.class_id
        WHERE tc.user_id = $1 AND tc.status = 'active'
        ORDER BY c.name ASC`,
-      [userId]
+      [user.id]
     );
 
     return NextResponse.json({ ok: true, classes: rows });

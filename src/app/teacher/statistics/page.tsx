@@ -90,47 +90,26 @@ export default function TeacherStatisticsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      setError("Unable to load statistics.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user.id) {
-        setError("Unable to load statistics.");
-        setLoading(false);
-        return;
-      }
-
-      const loadStats = async () => {
-        try {
-          const response = await fetch(
-            `/api/school-admin/statistics?user_id=${user.id}`
-          );
-          const data = await response.json();
-          if (!response.ok) {
-            throw new Error(data?.message || "Unable to load statistics.");
-          }
-          setStudentsByClass(data?.studentsByClass ?? []);
-          setTeachersByClass(data?.teachersByClass ?? []);
-          setGenderDistribution(data?.genderDistribution ?? []);
-          setSchool(data?.school ?? "");
-          setError(null);
-        } catch (fetchError) {
-          setError("Unable to load statistics.");
-        } finally {
-          setLoading(false);
+    const loadStats = async () => {
+      try {
+        const response = await fetch(`/api/school-admin/statistics`);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data?.message || "Unable to load statistics.");
         }
-      };
+        setStudentsByClass(data?.studentsByClass ?? []);
+        setTeachersByClass(data?.teachersByClass ?? []);
+        setGenderDistribution(data?.genderDistribution ?? []);
+        setSchool(data?.school ?? "");
+        setError(null);
+      } catch (fetchError) {
+        setError("Unable to load statistics.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      loadStats();
-    } catch (parseError) {
-      setError("Unable to load statistics.");
-      setLoading(false);
-    }
+    loadStats();
   }, []);
 
   const maxStudentCount = useMemo(() => {

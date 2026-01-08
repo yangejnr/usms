@@ -28,44 +28,34 @@ export default function TeacherClassDetailPage() {
   }>({ loading: false, error: null });
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw || !classId) {
+    if (!classId) {
       return;
     }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user?.id) {
-        return;
-      }
-      const fetchSubjects = async () => {
-        setListState({ loading: true, error: null });
-        try {
-          const response = await fetch(
-            `/api/teacher/class-subjects?user_id=${user.id}&class_id=${classId}`
-          );
-          const data = await response.json();
-          if (!response.ok) {
-            setListState({
-              loading: false,
-              error: data?.message ?? "Unable to fetch subjects.",
-            });
-            return;
-          }
-          setSubjects(data?.subjects ?? []);
-          setClassInfo(data?.classInfo ?? null);
-          setListState({ loading: false, error: null });
-        } catch (error) {
+    const fetchSubjects = async () => {
+      setListState({ loading: true, error: null });
+      try {
+        const response = await fetch(
+          `/api/teacher/class-subjects?class_id=${classId}`
+        );
+        const data = await response.json();
+        if (!response.ok) {
           setListState({
             loading: false,
-            error: "Unable to reach the server.",
+            error: data?.message ?? "Unable to fetch subjects.",
           });
+          return;
         }
-      };
-      fetchSubjects();
-
-    } catch (error) {
-      return;
-    }
+        setSubjects(data?.subjects ?? []);
+        setClassInfo(data?.classInfo ?? null);
+        setListState({ loading: false, error: null });
+      } catch (error) {
+        setListState({
+          loading: false,
+          error: "Unable to reach the server.",
+        });
+      }
+    };
+    fetchSubjects();
   }, [classId]);
 
   return (

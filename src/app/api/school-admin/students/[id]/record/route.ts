@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireSchoolAdmin } from "@/lib/authorization";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const adminCheck = await requireSchoolAdmin(user.id);
+    if (adminCheck) {
+      return adminCheck;
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -52,9 +62,17 @@ export async function PATCH(
 
     values.push(id);
 
+    const adminSchoolResult = await pool.query<{ school: string | null }>(
+      "SELECT school FROM users WHERE id = $1 LIMIT 1",
+      [user.id]
+    );
+    const adminSchool = adminSchoolResult.rows[0]?.school;
+
     const result = await pool.query(
-      `UPDATE students SET ${fields.join(", ")} WHERE id = $${index}`,
-      values
+      `UPDATE students SET ${fields.join(", ")} WHERE id = $${index} AND school = $${
+        index + 1
+      }`,
+      [...values, adminSchool]
     );
 
     if (result.rowCount === 0) {

@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const schoolsResult = await pool.query<{ count: string }>(
       "SELECT COUNT(*)::text as count FROM schools"
     );

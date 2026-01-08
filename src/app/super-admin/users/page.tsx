@@ -23,7 +23,6 @@ export default function UsersPage() {
     loading: boolean;
     assigned: boolean;
   }>({ loading: false, assigned: false });
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [editUser, setEditUser] = useState<{
     id: string;
     account_id: string | null;
@@ -110,19 +109,6 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
-
-  useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      setCurrentUserId(user.id ?? null);
-    } catch (error) {
-      setCurrentUserId(null);
-    }
   }, []);
 
   useEffect(() => {
@@ -315,7 +301,7 @@ export default function UsersPage() {
         {
           method: schoolAdminState.assigned ? "DELETE" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ assigned_by: currentUserId }),
+          body: JSON.stringify({}),
         }
       );
       const data = await response.json();

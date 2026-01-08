@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("user_id");
-
-    if (!userId) {
-      return NextResponse.json(
-        { ok: false, message: "User id is required." },
-        { status: 400 }
-      );
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["teacher"]);
+    if (roleCheck) {
+      return roleCheck;
     }
 
     const { rows } = await pool.query(
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
        FROM teacher_profiles
        WHERE user_id = $1
        LIMIT 1`,
-      [userId]
+      [user.id]
     );
 
     return NextResponse.json({ ok: true, profile: rows[0] ?? null });
@@ -32,8 +32,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["teacher"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const body = await request.json();
-    const userId = String(body?.user_id ?? "").trim();
     const phone = String(body?.phone ?? "").trim();
     const address = String(body?.address ?? "").trim();
     const gender = String(body?.gender ?? "").trim();
@@ -41,7 +49,7 @@ export async function POST(request: Request) {
     const maritalStatus = String(body?.marital_status ?? "").trim();
     const photoDataUrl = String(body?.photo_data_url ?? "").trim();
 
-    if (!userId || !phone || !address || !gender || !dateOfBirth || !maritalStatus) {
+    if (!phone || !address || !gender || !dateOfBirth || !maritalStatus) {
       return NextResponse.json(
         { ok: false, message: "All fields are required." },
         { status: 400 }
@@ -61,7 +69,7 @@ export async function POST(request: Request) {
          photo_data_url = EXCLUDED.photo_data_url,
          updated_at = NOW()`,
       [
-        userId,
+        user.id,
         phone,
         address,
         gender,

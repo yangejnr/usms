@@ -55,7 +55,6 @@ export default function AssignClassDetailPage() {
     loading: boolean;
     error: string | null;
   }>({ loading: false, error: null });
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const fetchDetail = async () => {
     if (!teacherId) {
@@ -85,7 +84,7 @@ export default function AssignClassDetailPage() {
 
   const fetchAllClasses = async () => {
     try {
-      const response = await fetch("/api/admin/classes");
+      const response = await fetch("/api/catalog/classes");
       const data = await response.json();
       if (response.ok) {
         setAllClasses(data?.classes ?? []);
@@ -97,7 +96,7 @@ export default function AssignClassDetailPage() {
 
   const fetchAllSubjects = async () => {
     try {
-      const response = await fetch("/api/admin/subjects");
+      const response = await fetch("/api/catalog/subjects");
       const data = await response.json();
       if (response.ok) {
         setAllSubjects(data?.subjects ?? []);
@@ -108,15 +107,6 @@ export default function AssignClassDetailPage() {
   };
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (raw) {
-      try {
-        const user = JSON.parse(raw) as { id?: string | null };
-        setCurrentUserId(user.id ?? null);
-      } catch (error) {
-        setCurrentUserId(null);
-      }
-    }
     fetchDetail();
     fetchAllClasses();
     fetchAllSubjects();
@@ -134,7 +124,6 @@ export default function AssignClassDetailPage() {
         body: JSON.stringify({
           class_id: selectedClass,
           class_group: classGroup,
-          added_by: currentUserId,
         }),
       });
       const data = await response.json();
@@ -164,7 +153,6 @@ export default function AssignClassDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           assignment_id: assignmentId,
-          removed_by: currentUserId,
         }),
       });
       const data = await response.json();
@@ -215,7 +203,6 @@ export default function AssignClassDetailPage() {
           body: JSON.stringify({
             class_id: classDetail.id,
             subject_id: selectedSubject,
-            added_by: currentUserId,
           }),
         }
       );
@@ -247,7 +234,6 @@ export default function AssignClassDetailPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             assignment_id: assignmentId,
-            removed_by: currentUserId,
           }),
         }
       );

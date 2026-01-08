@@ -20,42 +20,28 @@ export default function TeacherSubjectsPage() {
   }>({ loading: false, error: null });
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user?.id) {
-        return;
-      }
-      const fetchSubjects = async () => {
-        setListState({ loading: true, error: null });
-        try {
-          const response = await fetch(
-            `/api/teacher/subjects?user_id=${user.id}`
-          );
-          const data = await response.json();
-          if (!response.ok) {
-            setListState({
-              loading: false,
-              error: data?.message ?? "Unable to fetch subjects.",
-            });
-            return;
-          }
-          setSubjects(data?.subjects ?? []);
-          setListState({ loading: false, error: null });
-        } catch (error) {
+    const fetchSubjects = async () => {
+      setListState({ loading: true, error: null });
+      try {
+        const response = await fetch(`/api/teacher/subjects`);
+        const data = await response.json();
+        if (!response.ok) {
           setListState({
             loading: false,
-            error: "Unable to reach the server.",
+            error: data?.message ?? "Unable to fetch subjects.",
           });
+          return;
         }
-      };
-      fetchSubjects();
-    } catch (error) {
-      return;
-    }
+        setSubjects(data?.subjects ?? []);
+        setListState({ loading: false, error: null });
+      } catch (error) {
+        setListState({
+          loading: false,
+          error: "Unable to reach the server.",
+        });
+      }
+    };
+    fetchSubjects();
   }, []);
 
   return (

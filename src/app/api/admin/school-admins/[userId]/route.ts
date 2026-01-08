@@ -1,16 +1,29 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+
     const { userId } = await params;
     if (!userId) {
       return NextResponse.json(
         { ok: false, message: "User id is required." },
         { status: 400 }
+      );
+    }
+
+    if (user.user_role !== "admin" && user.id !== userId) {
+      return NextResponse.json(
+        { ok: false, message: "Forbidden." },
+        { status: 403 }
       );
     }
 
@@ -34,9 +47,18 @@ export async function POST(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const { userId } = await params;
-    const body = await request.json();
-    const assignedBy = body?.assigned_by ? String(body.assigned_by) : null;
+    await request.json().catch(() => null);
+    const assignedBy = user.id;
 
     if (!userId) {
       return NextResponse.json(
@@ -53,9 +75,9 @@ export async function POST(
       "SELECT account_id, email, user_role FROM users WHERE id = $1 LIMIT 1",
       [userId]
     );
-    const user = rows[0];
+    const targetUser = rows[0];
 
-    if (!user || user.user_role !== "teacher") {
+    if (!targetUser || targetUser.user_role !== "teacher") {
       return NextResponse.json(
         { ok: false, message: "Only teachers can be assigned." },
         { status: 400 }
@@ -65,7 +87,7 @@ export async function POST(
     await pool.query(
       `INSERT INTO school_admins (user_id, account_id, email, status, assigned_by, date_assigned)
        VALUES ($1, $2, $3, 'active', $4, NOW())`,
-      [userId, user.account_id, user.email, assignedBy]
+      [userId, targetUser.account_id, targetUser.email, assignedBy]
     );
 
     return NextResponse.json({ ok: true, message: "Assigned." });
@@ -82,9 +104,18 @@ export async function DELETE(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const { userId } = await params;
-    const body = await request.json();
-    const removedBy = body?.assigned_by ? String(body.assigned_by) : null;
+    await request.json().catch(() => null);
+    const removedBy = user.id;
 
     if (!userId) {
       return NextResponse.json(

@@ -20,42 +20,28 @@ export default function TeacherClassesPage() {
   }>({ loading: false, error: null });
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user?.id) {
-        return;
-      }
-      const fetchClasses = async () => {
-        setListState({ loading: true, error: null });
-        try {
-          const response = await fetch(
-            `/api/teacher/classes?user_id=${user.id}`
-          );
-          const data = await response.json();
-          if (!response.ok) {
-            setListState({
-              loading: false,
-              error: data?.message ?? "Unable to fetch classes.",
-            });
-            return;
-          }
-          setClasses(data?.classes ?? []);
-          setListState({ loading: false, error: null });
-        } catch (error) {
+    const fetchClasses = async () => {
+      setListState({ loading: true, error: null });
+      try {
+        const response = await fetch(`/api/teacher/classes`);
+        const data = await response.json();
+        if (!response.ok) {
           setListState({
             loading: false,
-            error: "Unable to reach the server.",
+            error: data?.message ?? "Unable to fetch classes.",
           });
+          return;
         }
-      };
-      fetchClasses();
-    } catch (error) {
-      return;
-    }
+        setClasses(data?.classes ?? []);
+        setListState({ loading: false, error: null });
+      } catch (error) {
+        setListState({
+          loading: false,
+          error: "Unable to reach the server.",
+        });
+      }
+    };
+    fetchClasses();
   }, []);
 
   return (

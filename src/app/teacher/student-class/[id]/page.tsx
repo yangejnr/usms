@@ -43,7 +43,6 @@ export default function StudentClassDetailPage() {
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [state, setState] = useState<{
     loading: boolean;
     error: string | null;
@@ -79,8 +78,8 @@ export default function StudentClassDetailPage() {
   const fetchAll = async () => {
     try {
       const [classesResponse, subjectsResponse] = await Promise.all([
-        fetch("/api/admin/classes"),
-        fetch("/api/admin/subjects"),
+        fetch("/api/catalog/classes"),
+        fetch("/api/catalog/subjects"),
       ]);
       const classesData = await classesResponse.json();
       const subjectsData = await subjectsResponse.json();
@@ -96,15 +95,6 @@ export default function StudentClassDetailPage() {
   };
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (raw) {
-      try {
-        const user = JSON.parse(raw) as { id?: string | null };
-        setCurrentUserId(user.id ?? null);
-      } catch (error) {
-        setCurrentUserId(null);
-      }
-    }
     fetchDetail();
     fetchAll();
   }, [studentId]);
@@ -120,7 +110,6 @@ export default function StudentClassDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           class_id: selectedClass,
-          added_by: currentUserId,
         }),
       });
       const data = await response.json();
@@ -156,7 +145,6 @@ export default function StudentClassDetailPage() {
           body: JSON.stringify({
             class_id: classItem.id,
             subject_id: selectedSubject,
-            added_by: currentUserId,
           }),
         }
       );
@@ -186,7 +174,6 @@ export default function StudentClassDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           assignment_id: assignmentId,
-          removed_by: currentUserId,
         }),
       });
       const data = await response.json();

@@ -1,17 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-type StoredUser = {
-  email?: string | null;
-  account_id?: string | null;
-  full_name?: string | null;
-};
 
 export default function ChangePasswordPage() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,19 +17,6 @@ export default function ChangePasswordPage() {
     success: string | null;
   }>({ loading: false, error: null, success: null });
 
-  useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as StoredUser;
-      setIdentifier(user.account_id || user.email || "");
-    } catch (error) {
-      setIdentifier("");
-    }
-  }, []);
-
   const rules = {
     minLength: newPassword.length >= 8,
     hasUpper: /[A-Z]/.test(newPassword),
@@ -48,15 +28,6 @@ export default function ChangePasswordPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setState({ loading: true, error: null, success: null });
-
-    if (!identifier) {
-      setState({
-        loading: false,
-        error: "No user context found. Please sign in again.",
-        success: null,
-      });
-      return;
-    }
 
     if (newPassword !== confirmPassword) {
       setState({
@@ -72,7 +43,6 @@ export default function ChangePasswordPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          identifier,
           currentPassword,
           newPassword,
         }),

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
+import { getAuthCookieName, signAuthToken } from "@/lib/auth";
 
 type UserRow = {
   id: string | number;
@@ -11,6 +12,7 @@ type UserRow = {
   full_name?: string;
   account_id?: string;
   must_change_password?: boolean;
+  school?: string | null;
 };
 
 const USER_TABLE = process.env.AUTH_USER_TABLE ?? "users";
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     const query = `
-      SELECT id, ${EMAIL_COLUMN} as email, ${USERNAME_COLUMN} as username, ${PASSWORD_COLUMN} as password, user_role, full_name, account_id, must_change_password
+      SELECT id, ${EMAIL_COLUMN} as email, ${USERNAME_COLUMN} as username, ${PASSWORD_COLUMN} as password, user_role, full_name, account_id, must_change_password, school
       FROM ${USER_TABLE}
       WHERE ${EMAIL_COLUMN} = $1 OR ${USERNAME_COLUMN} = $1
       LIMIT 1
@@ -65,7 +67,17 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({
+    const token = await signAuthToken({
+      id: String(user.id),
+      email: user.email ?? null,
+      account_id: user.account_id ?? null,
+      full_name: user.full_name ?? null,
+      user_role: user.user_role ?? null,
+      must_change_password: user.must_change_password ?? false,
+      school: user.school ?? null,
+    });
+
+    const response = NextResponse.json({
       ok: true,
       message: "Authenticated.",
       user: {
@@ -76,8 +88,17 @@ export async function POST(request: Request) {
         full_name: user.full_name ?? null,
         account_id: user.account_id ?? null,
         must_change_password: user.must_change_password ?? false,
+        school: user.school ?? null,
       },
     });
+    response.cookies.set(getAuthCookieName(), token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+    return response;
   } catch (error) {
     return NextResponse.json(
       { ok: false, message: "Login failed." },

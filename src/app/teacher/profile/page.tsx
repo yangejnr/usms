@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 type Profile = {
-  user_id: string;
   phone: string;
   address: string;
   gender: string;
@@ -14,7 +13,6 @@ type Profile = {
 
 export default function TeacherProfilePage() {
   const [profile, setProfile] = useState<Profile>({
-    user_id: "",
     phone: "",
     address: "",
     gender: "male",
@@ -31,37 +29,21 @@ export default function TeacherProfilePage() {
   }>({ loading: false, error: null, success: null });
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user?.id) {
-        return;
-      }
-      const fetchProfile = async () => {
-        try {
-          const response = await fetch(
-            `/api/teacher/profile?user_id=${user.id}`
-          );
-          const data = await response.json();
-          if (response.ok && data?.profile) {
-            setProfile(data.profile);
-            setHasProfile(true);
-          } else {
-            setProfile((prev) => ({ ...prev, user_id: user.id as string }));
-            setHasProfile(false);
-          }
-        } catch (error) {
-          setProfile((prev) => ({ ...prev, user_id: user.id as string }));
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch(`/api/teacher/profile`);
+        const data = await response.json();
+        if (response.ok && data?.profile) {
+          setProfile(data.profile);
+          setHasProfile(true);
+        } else {
           setHasProfile(false);
         }
-      };
-      fetchProfile();
-    } catch (error) {
-      return;
-    }
+      } catch (error) {
+        setHasProfile(false);
+      }
+    };
+    fetchProfile();
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

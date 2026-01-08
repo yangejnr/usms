@@ -2,15 +2,23 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { validatePasswordPolicy } from "@/lib/password";
+import { getAuthUserFromRequest } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
+    const authUser = await getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { ok: false, message: "Unauthorized." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const identifier = String(body?.identifier ?? "").trim();
     const currentPassword = String(body?.currentPassword ?? "");
     const newPassword = String(body?.newPassword ?? "");
 
-    if (!identifier || !currentPassword || !newPassword) {
+    if (!currentPassword || !newPassword) {
       return NextResponse.json(
         { ok: false, message: "All fields are required." },
         { status: 400 }
@@ -34,9 +42,9 @@ export async function POST(request: Request) {
       password: string;
     }>(
       `SELECT id, password FROM users
-       WHERE email = $1 OR account_id = $1
+       WHERE id = $1
        LIMIT 1`,
-      [identifier]
+      [authUser.id]
     );
     const user = rows[0];
 

@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireAuthUser, requireRole } from "@/lib/authorization";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const { rows } = await pool.query(
       `SELECT id, name, school_code, category, address, school_type, status
        FROM schools
@@ -19,6 +29,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const { user, response } = await requireAuthUser(request);
+    if (!user) {
+      return response;
+    }
+    const roleCheck = requireRole(user, ["admin"]);
+    if (roleCheck) {
+      return roleCheck;
+    }
+
     const body = await request.json();
     const name = String(body?.name ?? "").trim();
     const schoolCode = String(body?.school_code ?? "").trim().toUpperCase();

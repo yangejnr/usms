@@ -9,6 +9,7 @@ type StudentItem = {
   firstname: string;
   othername: string | null;
   gender: string;
+  status?: string;
 };
 
 const formatLabel = (value: string) =>
@@ -27,52 +28,41 @@ export default function StudentClassPage() {
   } | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user?.id) {
-        return;
-      }
-      const fetchStudents = async () => {
-        setListState({ loading: true, error: null });
-        try {
-          const response = await fetch(
-            `/api/school-admin/students?user_id=${user.id}`
-          );
-          const data = await response.json();
-          if (!response.ok) {
-            setListState({
-              loading: false,
-              error: data?.message ?? "Unable to fetch students.",
-            });
-            return;
-          }
-          setStudents(data?.students ?? []);
-          setSchoolName(data?.school ?? null);
-          setListState({ loading: false, error: null });
-        } catch (error) {
+    const fetchStudents = async () => {
+      setListState({ loading: true, error: null });
+      try {
+        const response = await fetch(`/api/school-admin/students`);
+        const data = await response.json();
+        if (!response.ok) {
           setListState({
             loading: false,
-            error: "Unable to reach the server.",
+            error: data?.message ?? "Unable to fetch students.",
           });
+          return;
         }
-      };
-      fetchStudents();
-    } catch (error) {
-      return;
-    }
+        setStudents(data?.students ?? []);
+        setSchoolName(data?.school ?? null);
+        setListState({ loading: false, error: null });
+      } catch (error) {
+        setListState({
+          loading: false,
+          error: "Unable to reach the server.",
+        });
+      }
+    };
+    fetchStudents();
   }, []);
 
   const handleDeactivate = async (studentId: string) => {
     try {
-      const response = await fetch(`/api/admin/users/${studentId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "inactive" }),
-      });
+      const response = await fetch(
+        `/api/school-admin/students/${studentId}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "inactive" }),
+        }
+      );
       const data = await response.json();
       if (!response.ok) {
         setListState({

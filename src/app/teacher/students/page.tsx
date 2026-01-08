@@ -35,7 +35,6 @@ export default function StudentsPage() {
     id: string;
     name: string;
   } | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [formState, setFormState] = useState({
     student_no: "",
     surname: "",
@@ -63,12 +62,10 @@ export default function StudentsPage() {
     error: string | null;
   }>({ loading: false, error: null });
 
-  const fetchStudents = async (userId: string) => {
+  const fetchStudents = async () => {
     setListState({ loading: true, error: null });
     try {
-      const response = await fetch(
-        `/api/school-admin/students?user_id=${userId}`
-      );
+      const response = await fetch(`/api/school-admin/students`);
       const data = await response.json();
       if (!response.ok) {
         setListState({
@@ -89,20 +86,7 @@ export default function StudentsPage() {
   };
 
   useEffect(() => {
-    const raw = localStorage.getItem("ajs_user");
-    if (!raw) {
-      return;
-    }
-    try {
-      const user = JSON.parse(raw) as { id?: string | null };
-      if (!user?.id) {
-        return;
-      }
-      setCurrentUserId(user.id);
-      fetchStudents(user.id);
-    } catch (error) {
-      return;
-    }
+    fetchStudents();
   }, []);
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,9 +106,6 @@ export default function StudentsPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!currentUserId) {
-      return;
-    }
     setSubmitState({ loading: true, error: null, success: null });
 
     try {
@@ -133,7 +114,6 @@ export default function StudentsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formState,
-          user_id: currentUserId,
         }),
       });
       const data = await response.json();
@@ -168,7 +148,7 @@ export default function StudentsPage() {
         parent_email: "",
         parent_address: "",
       });
-      fetchStudents(currentUserId);
+      fetchStudents();
     } catch (error) {
       setSubmitState({
         loading: false,
@@ -209,9 +189,7 @@ export default function StudentsPage() {
         success: "Student updated.",
       });
       setEditStudent(null);
-      if (currentUserId) {
-        fetchStudents(currentUserId);
-      }
+      fetchStudents();
     } catch (error) {
       setSubmitState({
         loading: false,
@@ -239,9 +217,7 @@ export default function StudentsPage() {
         });
         return;
       }
-      if (currentUserId) {
-        fetchStudents(currentUserId);
-      }
+      fetchStudents();
     } catch (error) {
       setListState({
         loading: false,
