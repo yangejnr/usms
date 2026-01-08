@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 
@@ -14,7 +14,7 @@ function validate(password: string) {
   };
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const params = useSearchParams();
   const token = params.get("token") ?? "";
   const router = useRouter();
@@ -151,5 +151,21 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f7f2e8] px-6 py-16 text-[#1b1b18]">
+          <div className="mx-auto w-full max-w-lg rounded-3xl border border-white/70 bg-white/90 p-8 shadow-2xl">
+            <p className="text-sm text-[#1b1b18]/70">Loading reset form...</p>
+          </div>
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
