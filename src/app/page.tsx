@@ -12,6 +12,13 @@ export default function Home() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotState, setForgotState] = useState<{
+    loading: boolean;
+    error: string | null;
+    success: string | null;
+  }>({ loading: false, error: null, success: null });
   const router = useRouter();
 
   const submitSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -36,6 +43,11 @@ export default function Home() {
       if (data?.user) {
         localStorage.setItem("ajs_user", JSON.stringify(data.user));
       }
+      if (data?.user?.must_change_password === false) {
+        setSignInOpen(false);
+        router.push("/change-password");
+        return;
+      }
       setAuthSuccess("Signed in successfully.");
       setSignInOpen(false);
       router.push("/super-admin");
@@ -43,6 +55,45 @@ export default function Home() {
       setAuthError("Unable to reach the server.");
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const submitForgot = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setForgotState({ loading: true, error: null, success: null });
+
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setForgotState({
+          loading: false,
+          error: data?.message ?? "Unable to send reset link.",
+          success: null,
+        });
+        return;
+      }
+
+      setForgotState({
+        loading: false,
+        error: null,
+        success: "If the account exists, a reset link has been sent.",
+      });
+      setTimeout(() => {
+        setShowForgot(false);
+        router.push("/");
+      }, 800);
+    } catch (error) {
+      setForgotState({
+        loading: false,
+        error: "Unable to reach the server.",
+        success: null,
+      });
     }
   };
 
@@ -493,7 +544,14 @@ export default function Home() {
                 <input type="checkbox" className="h-4 w-4 rounded" />
                 Remember this device
               </label>
-              <button type="button" className="text-[#0f4c3a]">
+              <button
+                type="button"
+                className="text-[#0f4c3a]"
+                onClick={() => {
+                  setShowForgot(true);
+                  setForgotState({ loading: false, error: null, success: null });
+                }}
+              >
                 Forgot password?
               </button>
             </div>
@@ -517,6 +575,67 @@ export default function Home() {
             <p className="text-center text-xs text-[#1b1b18]/60">
               Need access? Contact your diocesan administrator.
             </p>
+          </form>
+        </div>
+      </div>
+
+      <div
+        className={`fixed inset-0 z-50 flex items-center justify-center px-6 transition-opacity ${
+          showForgot ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+        aria-hidden={!showForgot}
+      >
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowForgot(false)}
+        />
+        <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white/90 shadow-2xl">
+          <div className="flex items-start justify-between border-b border-[#0f4c3a]/10 px-6 py-5">
+            <div>
+              <p className="font-display text-2xl">Reset Password</p>
+              <p className="text-sm text-[#1b1b18]/70">
+                We will email a secure reset link.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#1b1b18]/20 bg-white text-[#1b1b18] transition hover:border-[#0f4c3a]/50 hover:text-[#0f4c3a]"
+              aria-label="Close forgot password"
+              onClick={() => setShowForgot(false)}
+            >
+              <span className="text-lg">×</span>
+            </button>
+          </div>
+          <form className="space-y-5 px-6 py-6" onSubmit={submitForgot}>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0f4c3a]">
+                Email
+              </label>
+              <input
+                type="email"
+                placeholder="you@school.edu.ng"
+                value={forgotEmail}
+                onChange={(event) => setForgotEmail(event.target.value)}
+                className="w-full rounded-2xl border border-[#0f4c3a]/20 bg-white px-4 py-3 text-sm text-[#1b1b18] shadow-sm outline-none transition focus:border-[#0f4c3a] focus:ring-2 focus:ring-[#0f4c3a]/20"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full rounded-full bg-[#0f4c3a] px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-[#0f4c3a]/25 transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={forgotState.loading}
+            >
+              {forgotState.loading ? "Sending..." : "Send reset link"}
+            </button>
+            {forgotState.error ? (
+              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+                {forgotState.error}
+              </p>
+            ) : null}
+            {forgotState.success ? (
+              <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs text-emerald-700">
+                {forgotState.success}
+              </p>
+            ) : null}
           </form>
         </div>
       </div>

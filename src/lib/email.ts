@@ -52,3 +52,37 @@ Archdiocese of Jos Academic Harmonisation Portal
     text,
   });
 }
+
+export async function sendPasswordResetEmail({
+  to,
+  fullName,
+  resetLink,
+  expiryHours,
+}: {
+  to: string;
+  fullName: string;
+  resetLink: string;
+  expiryHours: number;
+}) {
+  const greeting = fullName ? `Hello ${fullName},` : "Hello,";
+  const subject = "Reset your Academic Harmonisation Portal password";
+  const text = `${greeting}
+
+We received a request to reset your portal password.
+
+Reset link: ${resetLink}
+This link expires in ${expiryHours} hours.
+
+If you did not request this reset, ignore this email or report it to the diocesan administrator.
+
+Regards,
+Archdiocese of Jos Academic Harmonisation Portal
+`;
+
+  await transporter.sendMail({
+    from: `"Archdiocese of Jos Portal" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    text,
+  });
+}

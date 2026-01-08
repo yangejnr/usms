@@ -10,6 +10,7 @@ type UserRow = {
   user_role?: string;
   full_name?: string;
   account_id?: string;
+  must_change_password?: boolean;
 };
 
 const USER_TABLE = process.env.AUTH_USER_TABLE ?? "users";
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     }
 
     const query = `
-      SELECT id, ${EMAIL_COLUMN} as email, ${USERNAME_COLUMN} as username, ${PASSWORD_COLUMN} as password, user_role, full_name, account_id
+      SELECT id, ${EMAIL_COLUMN} as email, ${USERNAME_COLUMN} as username, ${PASSWORD_COLUMN} as password, user_role, full_name, account_id, must_change_password
       FROM ${USER_TABLE}
       WHERE ${EMAIL_COLUMN} = $1 OR ${USERNAME_COLUMN} = $1
       LIMIT 1
@@ -74,6 +75,7 @@ export async function POST(request: Request) {
         user_role: user.user_role ?? null,
         full_name: user.full_name ?? null,
         account_id: user.account_id ?? null,
+        must_change_password: user.must_change_password ?? false,
       },
     });
   } catch (error) {
