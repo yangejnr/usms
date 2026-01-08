@@ -1,24 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Archdiocese of Jos Catholic Schools Academic Harmonisation Portal.
+
+This repository contains the Next.js frontend and API routes powering the
+landing page and Super Admin console.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Create a local environment file:
+
+```bash
+cp .env.example .env.local
+```
+
+Then run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Landing page with diocesan visual identity
+- Super Admin console with user management
+- PostgreSQL-backed authentication and user provisioning
+- Email notifications for new accounts (SMTP)
+
+## Environment variables
+
+See `.env.example` for required variables.
+
+## Notes
+
+- Do not commit `.env.local` to source control.
 
 ## Learn More
 
