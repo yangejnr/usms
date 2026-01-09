@@ -15,6 +15,7 @@ type StudentItem = {
   test_1?: number | null;
   test_2?: number | null;
   exam?: number | null;
+  total?: number | null;
   total_students?: number;
   avg_total?: number | null;
   position?: number | null;
