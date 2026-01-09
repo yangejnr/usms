@@ -42,6 +42,19 @@ const formatLabel = (value: string) =>
 const formatScore = (value: number | null) =>
   value === null || Number.isNaN(value) ? "—" : value.toString();
 
+const formatComputed = (value: number | null) => {
+  if (value === null) {
+    return "—";
+  }
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) {
+    return "—";
+  }
+  return Number.isInteger(numericValue)
+    ? numericValue.toString()
+    : numericValue.toFixed(2);
+};
+
 export default function StudentSubjectsPage() {
   const params = useParams();
   const classId = String(params.id ?? "");
@@ -51,6 +64,7 @@ export default function StudentSubjectsPage() {
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [schoolSession, setSchoolSession] = useState("");
   const [schoolTerm, setSchoolTerm] = useState("First Term");
+  const [showPending, setShowPending] = useState(false);
   const [state, setState] = useState<{
     loading: boolean;
     error: string | null;
@@ -108,6 +122,20 @@ export default function StudentSubjectsPage() {
         classInfo.class_group ? ` - ${classInfo.class_group}` : ""
       }${classInfo.school_session ? ` · ${classInfo.school_session}` : ""}`
     : "Class";
+
+  const subjectTotals = subjects
+    .map((subject) => Number(subject.total))
+    .filter((value) => Number.isFinite(value));
+  const totalScore = subjectTotals.reduce((sum, value) => sum + value, 0);
+  const scoredSubjects = subjectTotals.length;
+  const averageScore = scoredSubjects ? totalScore / scoredSubjects : 0;
+  const totalStudents = subjects.reduce(
+    (max, subject) => Math.max(max, subject.total_students ?? 0),
+    0
+  );
+  const position =
+    subjects.find((subject) => subject.position !== null)?.position ?? null;
+  const pendingSubjects = subjects.filter((subject) => subject.total === null);
 
   return (
     <div className="space-y-6">
@@ -256,6 +284,115 @@ export default function StudentSubjectsPage() {
           </table>
         </div>
       </section>
+
+      <section className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-2xl shadow-[#0f4c3a]/10">
+        <h2 className="font-display text-xl text-[#1b1b18]">
+          Result Summary
+        </h2>
+        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+              Total Score
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+              {formatComputed(totalScore)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+              No of Subjects
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+              {subjects.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+              Subjects
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+              {subjects.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+              Average Score
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+              {formatComputed(averageScore)}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+              Position
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+              {position ?? "—"}{" "}
+              {totalStudents ? `out of ${totalStudents}` : ""}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+              Pending
+            </p>
+            <button
+              type="button"
+              className="mt-2 text-left text-2xl font-semibold text-[#0f4c3a] underline decoration-[#0f4c3a]/40 underline-offset-4"
+              onClick={() => setShowPending(true)}
+            >
+              {pendingSubjects.length}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {showPending ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl">
+            <div className="flex items-start justify-between border-b border-[#0f4c3a]/10 px-6 py-5">
+              <div>
+                <p className="font-display text-2xl">Pending Subjects</p>
+                <p className="text-sm text-[#1b1b18]/70">
+                  Subjects without scores for {schoolTerm} •{" "}
+                  {schoolSession || "session"}.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close pending subjects"
+                className="rounded-full border border-[#0f4c3a]/10 px-3 py-2 text-sm text-[#0f4c3a] transition hover:bg-white"
+                onClick={() => setShowPending(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="max-h-[50vh] overflow-y-auto px-6 py-5">
+              {pendingSubjects.length === 0 ? (
+                <p className="text-sm text-[#1b1b18]/70">
+                  No pending subjects for the selected session and term.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {pendingSubjects.map((subject) => (
+                    <li
+                      key={subject.id}
+                      className="flex items-center justify-between rounded-2xl border border-[#0f4c3a]/10 bg-white px-4 py-3 text-sm"
+                    >
+                      <span className="font-semibold text-[#1b1b18]">
+                        {subject.name}
+                      </span>
+                      <span className="text-xs uppercase tracking-[0.2em] text-[#0f4c3a]/70">
+                        Pending
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

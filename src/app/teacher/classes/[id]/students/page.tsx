@@ -79,7 +79,15 @@ export default function ClassStudentsPage() {
           </span>
         </h1>
         <p className="mt-3 text-sm text-[#1b1b18]/70">
-          View students enrolled in this class.
+          View students enrolled in{" "}
+          <span className="font-semibold">
+            {classInfo
+              ? `${classInfo.name}${
+                  classInfo.class_group ? ` - ${classInfo.class_group}` : ""
+                }`
+              : "this class"}
+          </span>
+          .
         </p>
       </header>
 

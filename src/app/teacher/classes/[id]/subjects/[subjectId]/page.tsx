@@ -446,6 +446,22 @@ export default function ClassSubjectStudentsPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0f4c3a]">
+                    School Term
+                  </label>
+                  <select
+                    value={schoolTerm}
+                    onChange={(event) => setSchoolTerm(event.target.value)}
+                    className="w-full rounded-2xl border border-[#0f4c3a]/20 bg-white px-4 py-3 text-sm text-[#1b1b18] shadow-sm outline-none transition focus:border-[#0f4c3a] focus:ring-2 focus:ring-[#0f4c3a]/20"
+                  >
+                    {["First Term", "Second Term", "Third Term"].map((term) => (
+                      <option key={term} value={term}>
+                        {term}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0f4c3a]">
                     Type
                   </label>
                   <select
