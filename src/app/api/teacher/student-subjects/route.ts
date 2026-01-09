@@ -45,6 +45,7 @@ export async function GET(request: Request) {
         s.code,
         s.category,
         COALESCE(subject_counts.total_students, 0)::int AS total_students,
+        scores.score_id,
         scores.school_session,
         scores.school_term,
         scores.assess_1,
@@ -61,9 +62,10 @@ export async function GET(request: Request) {
         AND sc.class_id = scs.class_id
         AND sc.status = 'active'
        JOIN subjects s ON s.id = scs.subject_id
-       JOIN LATERAL (
+       LEFT JOIN LATERAL (
          SELECT ss.school_session,
            ss.school_term,
+           ss.id AS score_id,
            ss.first_assessment AS assess_1,
            ss.second_assessment AS assess_2,
            ss.first_test AS test_1,
@@ -158,11 +160,18 @@ export async function GET(request: Request) {
       [studentId, classId]
     );
 
+    const classInfo = classResult.rows[0] ?? null;
+    const effectiveSession = sessionParam ?? classInfo?.school_session ?? null;
+    const effectiveTerm = termParam ?? null;
+    const subjectsAll = rows;
+    const subjectsScored = rows.filter((subject) => subject.score_id);
+
     return NextResponse.json({
       ok: true,
-      subjects: rows,
+      subjects: subjectsScored,
+      subjects_all: subjectsAll,
       student: studentResult.rows[0] ?? null,
-      class_info: classResult.rows[0] ?? null,
+      class_info: classInfo,
     });
   } catch (error) {
     return NextResponse.json(

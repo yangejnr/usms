@@ -144,6 +144,8 @@ export async function GET(request: Request) {
     );
 
     const info = infoResult.rows[0] ?? null;
+    const effectiveSession = sessionParam ?? info?.school_session ?? null;
+    const effectiveTerm = termParam ?? null;
 
     return NextResponse.json({
       ok: true,

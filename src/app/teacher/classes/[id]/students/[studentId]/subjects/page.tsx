@@ -9,6 +9,7 @@ type SubjectItem = {
   code: string;
   category: string;
   total_students: number;
+  score_id?: string | null;
   school_session: string | null;
   school_term: string | null;
   assess_1: number | null;
@@ -60,6 +61,7 @@ export default function StudentSubjectsPage() {
   const classId = String(params.id ?? "");
   const studentId = String(params.studentId ?? "");
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
+  const [subjectsAll, setSubjectsAll] = useState<SubjectItem[]>([]);
   const [student, setStudent] = useState<StudentInfo | null>(null);
   const [classInfo, setClassInfo] = useState<ClassInfo | null>(null);
   const [schoolSession, setSchoolSession] = useState("");
@@ -98,6 +100,7 @@ export default function StudentSubjectsPage() {
         return;
       }
       setSubjects(data?.subjects ?? []);
+      setSubjectsAll(data?.subjects_all ?? data?.subjects ?? []);
       setStudent(data?.student ?? null);
       setClassInfo(data?.class_info ?? null);
       if (!schoolSession) {
@@ -135,7 +138,7 @@ export default function StudentSubjectsPage() {
   );
   const position =
     subjects.find((subject) => subject.position !== null)?.position ?? null;
-  const pendingSubjects = subjects.filter((subject) => subject.total === null);
+  const pendingSubjects = subjectsAll.filter((subject) => !subject.score_id);
 
   return (
     <div className="space-y-6">
@@ -311,7 +314,7 @@ export default function StudentSubjectsPage() {
               Subjects
             </p>
             <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
-              {subjects.length}
+              {subjectsAll.length}
             </p>
           </div>
           <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
@@ -393,6 +396,7 @@ export default function StudentSubjectsPage() {
           </div>
         </div>
       ) : null}
+
     </div>
   );
 }

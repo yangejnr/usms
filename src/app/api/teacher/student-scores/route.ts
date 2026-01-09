@@ -30,6 +30,7 @@ const normalizeTerm = (value: string) => {
   }
 };
 
+
 export async function POST(request: Request) {
   try {
     const { user, response } = await requireAuthUser(request);
@@ -118,6 +119,7 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
 
     const total = calculateTotal([assess1, assess2, test1, test2, exam]);
 
