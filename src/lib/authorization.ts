@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { AuthUser, getAuthUserFromRequest } from "@/lib/auth";
+import { AuthUser, getAuthCookieName, getAuthUserFromRequest } from "@/lib/auth";
 
 export async function requireAuthUser(request: Request) {
   const user = await getAuthUserFromRequest(request);
   if (!user) {
-    return {
-      user: null,
-      response: NextResponse.json(
-        { ok: false, message: "Unauthorized." },
-        { status: 401 }
-      ),
-    };
+    const response = NextResponse.json(
+      { ok: false, message: "Unauthorized." },
+      { status: 401 }
+    );
+    response.cookies.set(getAuthCookieName(), "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    return { user: null, response };
   }
   return { user, response: null };
 }

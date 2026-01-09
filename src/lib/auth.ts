@@ -33,8 +33,12 @@ function getCookieValue(cookieHeader: string | null, name: string) {
   return null;
 }
 
-export async function signAuthToken(user: AuthUser) {
+export async function signAuthToken(
+  user: AuthUser,
+  options?: { lastActive?: number }
+) {
   const secret = getAuthSecret();
+  const lastActive = options?.lastActive ?? Math.floor(Date.now() / 1000);
   return new SignJWT({
     user_role: user.user_role ?? null,
     email: user.email ?? null,
@@ -42,6 +46,7 @@ export async function signAuthToken(user: AuthUser) {
     full_name: user.full_name ?? null,
     school: user.school ?? null,
     must_change_password: Boolean(user.must_change_password),
+    last_active: lastActive,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
