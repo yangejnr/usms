@@ -7,6 +7,7 @@ const baseNavItems = [
   { label: "Profile", href: "/teacher/profile" },
   { label: "Subjects", href: "/teacher/subjects" },
   { label: "Classes", href: "/teacher/classes" },
+  { label: "Form Teacher", href: "/teacher/form-classes" },
 ];
 
 export default function TeacherLayout({
@@ -64,8 +65,8 @@ export default function TeacherLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f2e8] text-[#1b1b18]">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6">
+    <div className="min-h-screen bg-[#f7f2e8] text-[#1b1b18] overflow-x-hidden">
+      <div className="flex w-full max-w-none items-center justify-between px-6 py-6">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-[#0f4c3a]/70">
             Teacher Portal
@@ -106,7 +107,7 @@ export default function TeacherLayout({
         </div>
       </div>
 
-      <div className="mx-auto grid w-full max-w-7xl gap-6 px-6 pb-8 lg:grid-cols-[240px_1fr]">
+      <div className="grid w-full max-w-none gap-6 px-6 pb-8 lg:grid-cols-[240px_1fr]">
         <aside className="rounded-3xl border border-white/70 bg-white/80 p-6 shadow-2xl shadow-[#0f4c3a]/10">
           <nav className="space-y-2 text-sm font-medium text-[#1b1b18]/80">
             {[
@@ -116,6 +117,7 @@ export default function TeacherLayout({
                     { label: "Students", href: "/teacher/students" },
                     { label: "Teacher Class", href: "/teacher/assign-class" },
                     { label: "Student Class", href: "/teacher/student-class" },
+                    { label: "Assign Form Teacher", href: "/teacher/form-teacher" },
                     { label: "Statistics", href: "/teacher/statistics" },
                   ]
                 : []),
@@ -134,7 +136,7 @@ export default function TeacherLayout({
         <main className="min-h-[80vh]">{children}</main>
       </div>
       <footer className="border-t border-[#0f4c3a]/10 bg-[#f1eadc]">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-6 py-6 text-sm text-[#1b1b18]/70 md:flex-row md:items-center md:justify-between">
+        <div className="flex w-full max-w-none flex-col gap-4 px-6 py-6 text-sm text-[#1b1b18]/70 md:flex-row md:items-center md:justify-between">
           <span>Archdiocese of Jos Academic Harmonisation Portal</span>
           <span>Teacher workspace</span>
         </div>
