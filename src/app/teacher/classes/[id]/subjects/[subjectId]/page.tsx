@@ -138,6 +138,15 @@ export default function ClassSubjectStudentsPage() {
       setScoreFormError("School session and term are required.");
       return;
     }
+    const trimmedScore = scoreValue.trim();
+    if (!trimmedScore) {
+      setScoreFormError("Score is required.");
+      return;
+    }
+    if (!/^\d+(\.\d+)?$/.test(trimmedScore)) {
+      setScoreFormError("Score must be a number (e.g., 10 or 10.5).");
+      return;
+    }
     try {
       const baseScores = {
         assess_1: scoreModal.student.assess_1 ?? 0,
@@ -147,7 +156,7 @@ export default function ClassSubjectStudentsPage() {
         exam: scoreModal.student.exam ?? 0,
       };
       const scoreKey = scoreKeyMap[scoreType] ?? "assess_1";
-      const scoreNumber = scoreValue === "" ? 0 : Number(scoreValue);
+      const scoreNumber = Number(trimmedScore);
       const payloadScores = {
         ...baseScores,
         [scoreKey]: Number.isNaN(scoreNumber) ? 0 : scoreNumber,
@@ -429,7 +438,11 @@ export default function ClassSubjectStudentsPage() {
                 <span className="text-lg">×</span>
               </button>
             </div>
-            <form className="space-y-4 px-6 py-6" onSubmit={handleSaveScore}>
+            <form
+              className="space-y-4 px-6 py-6"
+              onSubmit={handleSaveScore}
+              noValidate
+            >
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0f4c3a]">

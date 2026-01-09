@@ -33,10 +33,15 @@ export default function TeacherLayout({
           email?: string | null;
           account_id?: string | null;
           id?: string | null;
+          user_role?: string | null;
         };
         setDisplayName(
           user.full_name || user.account_id || user.email || "Teacher"
         );
+        if (user.user_role === "admin") {
+          setShowAssign(true);
+          return;
+        }
         if (user.id) {
           const adminResponse = await fetch(
             `/api/admin/school-admins/${user.id}`
