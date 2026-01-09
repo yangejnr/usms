@@ -67,6 +67,12 @@ export default function StudentSubjectsPage() {
   const [schoolSession, setSchoolSession] = useState("");
   const [schoolTerm, setSchoolTerm] = useState("First Term");
   const [showPending, setShowPending] = useState(false);
+  const [approvalState, setApprovalState] = useState<{
+    approved: boolean;
+    canApprove: boolean;
+  }>({ approved: false, canApprove: false });
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
   const [state, setState] = useState<{
     loading: boolean;
     error: string | null;
@@ -99,12 +105,18 @@ export default function StudentSubjectsPage() {
         });
         return;
       }
-      setSubjects(data?.subjects ?? []);
-      setSubjectsAll(data?.subjects_all ?? data?.subjects ?? []);
+      const nextSubjects = data?.subjects ?? [];
+      const nextSubjectsAll = data?.subjects_all ?? data?.subjects ?? [];
+      setSubjects(nextSubjects);
+      setSubjectsAll(nextSubjectsAll);
       setStudent(data?.student ?? null);
       setClassInfo(data?.class_info ?? null);
       if (!schoolSession) {
-        setSchoolSession(data?.class_info?.school_session ?? "");
+        setSchoolSession(
+          data?.class_info?.school_session ??
+            nextSubjectsAll[0]?.school_session ??
+            ""
+        );
       }
       setState({ loading: false, error: null });
     } catch (error) {
@@ -115,6 +127,41 @@ export default function StudentSubjectsPage() {
   useEffect(() => {
     fetchSubjects();
   }, [classId, studentId]);
+
+  useEffect(() => {
+    const fetchApproval = async () => {
+      const resolvedSession =
+        schoolSession ||
+        classInfo?.school_session ||
+        subjectsAll[0]?.school_session ||
+        "";
+      if (!classId || !resolvedSession || !schoolTerm) {
+        return;
+      }
+      try {
+        const query = new URLSearchParams({
+          class_id: classId,
+          school_session: resolvedSession,
+          school_term: schoolTerm,
+        });
+        const response = await fetch(
+          `/api/teacher/result-approval?${query.toString()}`
+        );
+        const data = await response.json();
+        if (!response.ok) {
+          setApprovalState({ approved: false, canApprove: false });
+          return;
+        }
+        setApprovalState({
+          approved: Boolean(data?.approved),
+          canApprove: Boolean(data?.can_approve),
+        });
+      } catch (error) {
+        setApprovalState({ approved: false, canApprove: false });
+      }
+    };
+    fetchApproval();
+  }, [classId, schoolSession, schoolTerm, classInfo, subjectsAll]);
 
   const studentName = student
     ? `${student.surname} ${student.firstname} ${student.othername ?? ""}`.trim()
@@ -139,6 +186,34 @@ export default function StudentSubjectsPage() {
   const position =
     subjects.find((subject) => subject.position !== null)?.position ?? null;
   const pendingSubjects = subjectsAll.filter((subject) => !subject.score_id);
+
+  const handleApprove = async () => {
+    setApproveError(null);
+    if (!classId || !schoolSession || !schoolTerm) {
+      setApproveError("School session and term are required.");
+      return;
+    }
+    try {
+      const response = await fetch("/api/teacher/result-approval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          class_id: classId,
+          school_session: schoolSession,
+          school_term: schoolTerm,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setApproveError(data?.message ?? "Unable to approve results.");
+        return;
+      }
+      setApprovalState((prev) => ({ ...prev, approved: true }));
+      setApproveModalOpen(false);
+    } catch (error) {
+      setApproveError("Unable to reach the server.");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -292,59 +367,86 @@ export default function StudentSubjectsPage() {
         <h2 className="font-display text-xl text-[#1b1b18]">
           Result Summary
         </h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
-              Total Score
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
-              {formatComputed(totalScore)}
-            </p>
+        <div className="mt-4 flex flex-wrap items-start gap-4">
+          <div className="grid flex-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
+            <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+                Total Score
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+                {formatComputed(totalScore)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+                No of Subjects
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+                {subjects.length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+                Subjects
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+                {subjectsAll.length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+                Average Score
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+                {formatComputed(averageScore)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+                Position
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
+                {position ?? "—"}{" "}
+                {totalStudents ? `out of ${totalStudents}` : ""}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+                Pending
+              </p>
+              <button
+                type="button"
+                className="mt-2 text-left text-2xl font-semibold text-[#0f4c3a] underline decoration-[#0f4c3a]/40 underline-offset-4"
+                onClick={() => setShowPending(true)}
+              >
+                {pendingSubjects.length}
+              </button>
+            </div>
           </div>
-          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
-              No of Subjects
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
-              {subjects.length}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
-              Subjects
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
-              {subjectsAll.length}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
-              Average Score
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
-              {formatComputed(averageScore)}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
-              Position
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-[#1b1b18]">
-              {position ?? "—"}{" "}
-              {totalStudents ? `out of ${totalStudents}` : ""}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[#0f4c3a]/10 bg-white/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
-              Pending
-            </p>
-            <button
-              type="button"
-              className="mt-2 text-left text-2xl font-semibold text-[#0f4c3a] underline decoration-[#0f4c3a]/40 underline-offset-4"
-              onClick={() => setShowPending(true)}
-            >
-              {pendingSubjects.length}
-            </button>
+          <div className="flex min-w-[180px] items-start justify-end">
+            {approvalState.approved ? (
+              <div className="flex flex-col items-end gap-2">
+                <span className="rounded-full bg-[#0f4c3a]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]">
+                  Approved
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]/60">
+                  Form Teacher Only
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-end gap-2">
+                <button
+                  type="button"
+                  className="rounded-full bg-[#0f4c3a] px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-lg shadow-[#0f4c3a]/20 transition hover:translate-y-[-1px]"
+                  onClick={() => setApproveModalOpen(true)}
+                >
+                  Approve Result
+                </button>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c3a]/60">
+                  Form Teacher Only
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -392,6 +494,57 @@ export default function StudentSubjectsPage() {
                   ))}
                 </ul>
               )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {approveModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl">
+            <div className="flex items-start justify-between border-b border-[#0f4c3a]/10 px-6 py-5">
+              <div>
+                <p className="font-display text-2xl">Approve Result</p>
+                <p className="text-sm text-[#1b1b18]/70">
+                  This will lock scores for {schoolTerm} •{" "}
+                  {schoolSession || "session"}.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close approval modal"
+                className="rounded-full border border-[#0f4c3a]/10 px-3 py-2 text-sm text-[#0f4c3a] transition hover:bg-white"
+                onClick={() => setApproveModalOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              <p className="text-sm text-[#1b1b18]/70">
+                Once approved, the result cannot be edited. Please confirm.
+              </p>
+              {approveError ? (
+                <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+                  {approveError}
+                </p>
+              ) : null}
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  className="rounded-full border border-[#1b1b18]/20 bg-white px-4 py-2 text-sm font-semibold text-[#1b1b18] transition hover:border-[#0f4c3a]/50 hover:text-[#0f4c3a]"
+                  onClick={() => setApproveModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full bg-[#0f4c3a] px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-[#0f4c3a]/20 transition hover:translate-y-[-1px]"
+                  onClick={handleApprove}
+                >
+                  Approve
+                </button>
+              </div>
             </div>
           </div>
         </div>
